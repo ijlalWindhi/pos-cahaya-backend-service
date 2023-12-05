@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
-export const getRoleDetails = async (req: Request, res: Response) => {
+export const getRoleDetail = async (req: Request, res: Response) => {
   const { uid } = req.params;
 
   try {
