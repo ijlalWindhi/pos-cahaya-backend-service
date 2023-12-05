@@ -86,15 +86,13 @@ export const updateRole = async (req: Request, res: Response) => {
   try {
     const existingRole = await prisma.role.findUnique({ where: { uid } });
 
-    if (!existingRole) {
-      return res.status(404).json({ message: "Role not found" });
-    }
-
     const existingName = await prisma.role.findFirst({
       where: { name, NOT: { uid } },
     });
 
-    if (existingName) {
+    if (!existingRole) {
+      return res.status(404).json({ message: "Role not found" });
+    } else if (existingName) {
       return res.status(400).json({ message: "Name already exists" });
     }
 
