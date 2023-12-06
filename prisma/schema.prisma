@@ -16,11 +16,12 @@ model User {
   email     String       @unique
   name      String?
   password  String?
-  bu        BusinessUnit @relation("User_BusinessUnit", fields: [buId], references: [id])
-  buId      Int
+  telephone String?
+  bu        BusinessUnit @relation("User_BusinessUnit", fields: [buUid], references: [uid])
+  buUid     String
   tokens    Token[]
-  roles     Role         @relation("User_Role", fields: [roleId], references: [id])
-  roleId    Int
+  roles     Role         @relation("User_Role", fields: [roleUid], references: [uid])
+  roleUid   String
   lastLogin DateTime?
   status    String       @default("ACTIVE")
   photo     String?
