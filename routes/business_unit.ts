@@ -1,12 +1,13 @@
 import express from "express";
 import * as businessUnitController from "../controller/business_unit";
+import { auth } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get("/", businessUnitController.getAllBusinessUnits);
-router.get("/:uid", businessUnitController.getBusinessUnitDetail);
-router.post("/", businessUnitController.createBusinessUnit);
-router.patch("/:uid", businessUnitController.updateBusinessUnit);
-router.delete("/:uid", businessUnitController.deleteBusinessUnit);
+router.get("/", auth, businessUnitController.getAllBusinessUnits);
+router.get("/:uid", auth, businessUnitController.getBusinessUnitDetail);
+router.post("/", auth, businessUnitController.createBusinessUnit);
+router.patch("/:uid", auth, businessUnitController.updateBusinessUnit);
+router.delete("/:uid", auth, businessUnitController.deleteBusinessUnit);
 
 export default router;
