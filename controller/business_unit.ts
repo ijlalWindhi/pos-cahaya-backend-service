@@ -10,9 +10,6 @@ export const getBusinessUnitDetail = async (req: Request, res: Response) => {
   try {
     const business_unit = await prisma.businessUnit.findUnique({
       where: { uid },
-      include: {
-        users: true,
-      },
     });
 
     if (!business_unit) {
@@ -31,9 +28,6 @@ export const getBusinessUnitDetail = async (req: Request, res: Response) => {
 export const getAllBusinessUnits = async (req: Request, res: Response) => {
   try {
     const business_units = await prisma.businessUnit.findMany({
-      include: {
-        users: true,
-      },
       orderBy: {
         name: "asc",
       },
