@@ -2,8 +2,11 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
+import jsonwebtoken from "jsonwebtoken";
+import dotenv from "dotenv";
 
 const prisma = new PrismaClient();
+dotenv.config();
 
 export const getUserDetail = async (req: Request, res: Response) => {
   const { uid } = req.params;
@@ -90,6 +93,51 @@ export const createUser = async (req: Request, res: Response) => {
     });
 
     return res.status(201).json({ message: "Success add user", data: user });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const loginUser = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ message: `${!email ? "Email" : "Password"} is required` });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        bu: true,
+        roles: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isPasswordMatch = user.password ? await bcrypt.compare(password, user.password) : false;
+    if (!isPasswordMatch) {
+      return res.status(400).json({ message: "Password is incorrect" });
+    }
+
+    const secretKey = process.env.SECRET_KEY || 'default_secret_key';
+    const token = jsonwebtoken.sign(
+      { user: { uid : user.uid, email: user.email, name: user.name }, role: user.roles, businessUnit: user.bu },
+      secretKey,
+      { expiresIn: "1d" }
+    );
+
+    return res.status(200).json({
+      message: "Success login",
+      data: { ...user, password: undefined },
+      token,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
