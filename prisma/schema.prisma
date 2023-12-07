@@ -34,6 +34,8 @@ model Employee {
   photo            String?
   address          String?
   historiesProduct HistoryProduct[] @relation("Employee_HistoryProduct")
+  businessUnit     BusinessUnit     @relation("BusinessUnit_Employee", fields: [businessUnitUid], references: [uid])
+  businessUnitUid  String
   status           String           @default("ACTIVE")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -65,16 +67,20 @@ model BusinessUnit {
   location  String
   products  Product[]        @relation("BusinessUnit_Product")
   histories HistoryProduct[] @relation("BusinessUnit_HistoryProduct")
+  employees Employee[]       @relation("BusinessUnit_Employee")
+  category  Category[]       @relation("Category_BusinessUnit")
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 }
 
 model Category {
-  uid       String    @id @unique
-  name      String    @unique
-  products  Product[] @relation("Category_Product")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  uid             String       @id @unique
+  name            String       @unique
+  products        Product[]    @relation("Category_Product")
+  business        BusinessUnit @relation("Category_BusinessUnit", fields: [businessUnitUid], references: [uid])
+  businessUnitUid String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 model Product {
