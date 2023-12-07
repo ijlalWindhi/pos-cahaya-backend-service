@@ -36,11 +36,32 @@ export const getAllCategoryProducts = async (req: Request, res: Response) => {
   }
 };
 
-export const createCategoryProduct = async (req: Request, res: Response) => {
-  const { name } = req.body;
+export const getAllCategoryProductsByBusinessUnit = async (
+  req: Request,
+  res: Response
+) => {
+  const { uid } = req.params;
 
-  if (!name) {
-    return res.status(400).json({ message: "Name is required" });
+  try {
+    const categoryProducts = await prisma.category.findMany({
+      where: { businessUnitUid: uid },
+    });
+
+    res
+      .status(200)
+      .json({ message: "Success get data", data: categoryProducts });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const createCategoryProduct = async (req: Request, res: Response) => {
+  const { name, businessUnitUid } = req.body;
+
+  if (!name || !businessUnitUid) {
+    return res
+      .status(400)
+      .json({ message: `${!name ? "Name" : "Business Unit"} is required` });
   }
 
   try {
@@ -48,6 +69,7 @@ export const createCategoryProduct = async (req: Request, res: Response) => {
       data: {
         uid: uuidv4(),
         name,
+        businessUnitUid,
       },
     });
 
@@ -89,6 +111,14 @@ export const deleteCategoryProduct = async (req: Request, res: Response) => {
   const { uid } = req.params;
 
   try {
+    const existingCategory = await prisma.category.findUnique({
+      where: { uid },
+    });
+
+    if (!existingCategory) {
+      return res.status(404).json({ message: "Category product not found" });
+    }
+
     const categoryProduct = await prisma.category.delete({
       where: { uid },
     });
