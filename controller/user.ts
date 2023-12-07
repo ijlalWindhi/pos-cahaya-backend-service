@@ -15,7 +15,6 @@ export const getUserDetail = async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
       where: { uid },
       include: {
-        bu: true,
         roles: true,
       },
     });
@@ -34,7 +33,6 @@ export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       include: {
-        bu: true,
         roles: true,
       },
     });
@@ -45,17 +43,15 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 export const createUser = async (req: Request, res: Response) => {
-  const { name, email, password, buUid, roleUid, telephone } = req.body;
+  const { name, email, password, roleUid, telephone } = req.body;
 
-  if (!name || !email || !password || !buUid || !roleUid) {
+  if (!name || !email || !password || !roleUid) {
     return res.status(400).json({
       message: `${
         !name
           ? "Name"
           : !email
           ? "Email"
-          : !buUid
-          ? "Business unit UID"
           : !roleUid
           ? "Role UID"
           : !telephone
@@ -85,7 +81,6 @@ export const createUser = async (req: Request, res: Response) => {
         name,
         email,
         telephone,
-        buUid,
         roleUid,
         password: await bcrypt.hash(password, 10),
         uid: uuidv4(),
@@ -112,26 +107,48 @@ export const loginUser = async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        bu: true,
         roles: true,
       },
     });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    } else if (user.status === "INACTIVE") {
+      return res.status(400).json({ message: "User is inactive" });
     }
 
-    const isPasswordMatch = user.password ? await bcrypt.compare(password, user.password) : false;
+    const isPasswordMatch = user.password
+      ? await bcrypt.compare(password, user.password)
+      : false;
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Password is incorrect" });
     }
 
-    const secretKey = process.env.SECRET_KEY || 'default_secret_key';
+    const secretKey = process.env.SECRET_KEY || "default_secret_key";
     const token = jsonwebtoken.sign(
-      { user: { uid : user.uid, email: user.email, name: user.name }, role: user.roles, businessUnit: user.bu },
+      {
+        user: { uid: user.uid, email: user.email, name: user.name },
+        role: user.roles,
+      },
       secretKey,
       { expiresIn: "1d" }
     );
+
+    // update table token
+    const addToken = await prisma.token.create({
+      data: {
+        uid: uuidv4(),
+        token,
+        type: "Bearer",
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        blacklisted: false,
+      },
+    });
+
+    await prisma.user.update({
+      where: { uid: user.uid },
+      data: { lastLogin: new Date(), tokenUid: addToken.uid },
+    });
 
     return res.status(200).json({
       message: "Success login",
@@ -146,31 +163,13 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   const { uid } = req.params;
-  const { name, email, password, buUid, roleUid, telephone } = req.body;
+  const { name, email, roleUid, telephone } = req.body;
 
-  if (!name || !email || !password || !buUid || !roleUid) {
+  if (!name || !email || !roleUid || !telephone) {
     return res.status(400).json({
       message: `${
-        !name
-          ? "Name"
-          : !email
-          ? "Email"
-          : !buUid
-          ? "Business unit UID"
-          : !roleUid
-          ? "Role UID"
-          : !telephone
-          ? "Telephone"
-          : "Password"
+        !name ? "Name" : !email ? "Email" : !roleUid ? "Role UID" : "Telephone"
       } is required`,
-    });
-  }
-
-  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm;
-  if (!passwordRegex.test(password)) {
-    return res.status(400).json({
-      message:
-        "Password must be at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 symbol",
     });
   }
 
@@ -192,13 +191,101 @@ export const updateUser = async (req: Request, res: Response) => {
       data: {
         name,
         email,
-        buUid,
         roleUid,
-        password: await bcrypt.hash(password, 10),
+        telephone,
       },
     });
 
     return res.status(200).json({ message: "Success update user", data: user });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+  const { uid } = req.params;
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({
+      message: `${!oldPassword ? "Old" : "New"} password is required`,
+    });
+  }
+
+  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm;
+  if (!passwordRegex.test(newPassword)) {
+    return res.status(400).json({
+      message:
+        "Password must be at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 symbol",
+    });
+  }
+
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { uid } });
+
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isPasswordMatch = existingUser.password
+      ? await bcrypt.compare(oldPassword, existingUser.password)
+      : false;
+    if (!isPasswordMatch) {
+      return res.status(400).json({ message: "Password is incorrect" });
+    }
+
+    const user = await prisma.user.update({
+      where: { uid },
+      data: { password: await bcrypt.hash(newPassword, 10) },
+    });
+
+    return res.status(200).json({
+      message: "Success update password",
+      data: { ...user, password: undefined },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// soft delete
+export const softDelete = async (req: Request, res: Response) => {
+  const { uid } = req.params;
+
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { uid } });
+
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await prisma.user.update({
+      where: { uid },
+      data: { status: "INACTIVE" },
+    });
+
+    return res.status(200).json({ message: "Success delete user" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  const { uid } = req.params;
+
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { uid } });
+
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await prisma.user.delete({ where: { uid } });
+
+    return res.status(200).json({ message: "Success delete user" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
