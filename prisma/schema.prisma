@@ -11,39 +11,47 @@ generator client {
 }
 
 model User {
-  id        Int          @id @default(autoincrement())
-  uid       String       @unique
-  email     String       @unique
+  uid       String    @id @unique
+  email     String    @unique
   name      String?
   password  String?
   telephone String?
-  bu        BusinessUnit @relation("User_BusinessUnit", fields: [buUid], references: [uid])
-  buUid     String
-  tokens    Token[]
-  roles     Role         @relation("User_Role", fields: [roleUid], references: [uid])
+  tokens    Token?    @relation("User_token", fields: [tokenUid], references: [uid])
+  tokenUid  String?
+  roles     Role      @relation("User_Role", fields: [roleUid], references: [uid])
   roleUid   String
   lastLogin DateTime?
-  status    String       @default("ACTIVE")
+  status    String    @default("ACTIVE")
   photo     String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Employee {
+  uid              String           @id @unique
+  name             String
+  telephone        String           @unique
+  photo            String?
+  address          String?
+  historiesProduct HistoryProduct[] @relation("Employee_HistoryProduct")
+  status           String           @default("ACTIVE")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model Token {
-  id          Int      @id @default(autoincrement())
-  uid         String   @unique
+  uid         String   @id @unique
   token       String   @unique
   type        String
   expiresAt   DateTime
   blacklisted Boolean  @default(false)
-  user        User     @relation(fields: [uid], references: [uid])
+  users       User[]   @relation("User_token")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Role {
-  id        Int      @id @default(autoincrement())
-  uid       String   @unique
+  uid       String   @id @unique
   name      String   @unique
   access    String[]
   users     User[]   @relation("User_Role")
@@ -52,11 +60,54 @@ model Role {
 }
 
 model BusinessUnit {
-  id        Int      @id @default(autoincrement())
-  uid       String   @unique
-  name      String   @unique
+  uid       String           @id @unique
+  name      String           @unique
   location  String
-  users     User[]   @relation("User_BusinessUnit")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  products  Product[]        @relation("BusinessUnit_Product")
+  histories HistoryProduct[] @relation("BusinessUnit_HistoryProduct")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Category {
+  uid       String    @id @unique
+  name      String    @unique
+  products  Product[] @relation("Category_Product")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  uid             String           @id @unique
+  name            String           @unique
+  quantity        Int
+  description     String?
+  priceBuy        Float
+  priceSell       Float
+  code            String?          @unique
+  photo           String?
+  category        Category         @relation("Category_Product", fields: [categoryUid], references: [uid])
+  categoryUid     String
+  businessUnit    BusinessUnit     @relation("BusinessUnit_Product", fields: [businessUnitUid], references: [uid])
+  businessUnitUid String
+  HistoryProduct  HistoryProduct[] @relation("History_Product")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model HistoryProduct {
+  uid             String       @id @unique
+  product         Product      @relation("History_Product", fields: [productUid], references: [uid])
+  productUid      String
+  quantity        Int
+  priceBuy        Float
+  businessUnit    BusinessUnit @relation("BusinessUnit_HistoryProduct", fields: [businessUnitUid], references: [uid])
+  businessUnitUid String
+  photo           String
+  dateIn          DateTime
+  description     String?
+  employee        Employee     @relation("Employee_HistoryProduct", fields: [employeeUid], references: [uid])
+  employeeUid     String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
