@@ -7,6 +7,7 @@ import {
   routerBusinessUnit,
   routerCategory,
   routerEmployee,
+  routerProduct,
 } from "./routes";
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use("/roles", routerRole);
 app.use("/business_units", routerBusinessUnit);
 app.use("/categories", routerCategory);
 app.use("/employee", routerEmployee);
+app.use("/products", routerProduct);
 
 app.listen(port, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
