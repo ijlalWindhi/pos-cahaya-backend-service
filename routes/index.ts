@@ -3,6 +3,7 @@ import routerRole from "./role";
 import routerBusinessUnit from "./business_unit";
 import routerCategory from "./category_product";
 import routerEmployee from "./employee";
+import routerProduct from "./product";
 
 export {
   routerUser,
@@ -10,4 +11,5 @@ export {
   routerBusinessUnit,
   routerCategory,
   routerEmployee,
+  routerProduct,
 };
