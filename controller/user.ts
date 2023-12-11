@@ -43,7 +43,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 export const createUser = async (req: Request, res: Response) => {
-  const { name, email, password, roleUid, telephone } = req.body;
+  const { name, email, password, roleUid, telephone, businessUid } = req.body;
 
   if (!name || !email || !password || !roleUid) {
     return res.status(400).json({
@@ -71,9 +71,12 @@ export const createUser = async (req: Request, res: Response) => {
 
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } });
+    const roleUser = await prisma.role.findUnique({ where: { uid: roleUid } });
 
     if (existingUser) {
       return res.status(400).json({ message: "Email already exists" });
+    } else if (roleUser?.name.toLowerCase() === "kasir" && !businessUid) {
+      return res.status(400).json({ message: "Business Unit is required" });
     }
 
     const user = await prisma.user.create({
@@ -83,6 +86,7 @@ export const createUser = async (req: Request, res: Response) => {
         telephone,
         roleUid,
         password: await bcrypt.hash(password, 10),
+        businessUid,
         uid: uuidv4(),
       },
     });
@@ -108,6 +112,7 @@ export const loginUser = async (req: Request, res: Response) => {
       where: { email },
       include: {
         roles: true,
+        business: true,
       },
     });
 
@@ -128,7 +133,8 @@ export const loginUser = async (req: Request, res: Response) => {
     const token = jsonwebtoken.sign(
       {
         user: { uid: user.uid, email: user.email, name: user.name },
-        role: user.roles,
+        business: user.business?.uid,
+        role: user.roles?.uid,
       },
       secretKey,
       { expiresIn: "1d" }
