@@ -21,6 +21,7 @@ export const getEmployeeDetail = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Success get data", data: employee });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -36,6 +37,7 @@ export const getAllEmployees = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "Success get data", data: employees });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -57,6 +59,7 @@ export const getAllEmployeesByBusinessUnit = async (
       .status(200)
       .json({ message: "Success get data", data: employees });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -64,7 +67,7 @@ export const getAllEmployeesByBusinessUnit = async (
 export const createEmployee = async (req: Request, res: Response) => {
   const { name, telephone, photo, address, businessUnitUid } = req.body;
 
-  if (!name || !businessUnitUid) {
+  if (!name || !businessUnitUid || !telephone) {
     return res.status(400).json({
       message: `${
         !name ? "Name" : !businessUnitUid ? "Business Unit" : "Telephone"
@@ -89,6 +92,7 @@ export const createEmployee = async (req: Request, res: Response) => {
       data: employee,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -122,6 +126,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
       data: employee,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -139,6 +144,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
       data: employee,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
