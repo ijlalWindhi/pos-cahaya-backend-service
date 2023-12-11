@@ -11,20 +11,22 @@ generator client {
 }
 
 model User {
-  uid       String    @id @unique
-  email     String    @unique
-  name      String?
-  password  String?
-  telephone String?
-  tokens    Token?    @relation("User_token", fields: [tokenUid], references: [uid])
-  tokenUid  String?
-  roles     Role      @relation("User_Role", fields: [roleUid], references: [uid])
-  roleUid   String
-  lastLogin DateTime?
-  status    String    @default("ACTIVE")
-  photo     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  uid         String        @id @unique
+  email       String        @unique
+  name        String?
+  password    String?
+  telephone   String?
+  tokens      Token?        @relation("User_token", fields: [tokenUid], references: [uid])
+  tokenUid    String?
+  roles       Role          @relation("User_Role", fields: [roleUid], references: [uid])
+  roleUid     String
+  business    BusinessUnit? @relation("User_Business", fields: [businessUid], references: [uid])
+  businessUid String?
+  lastLogin   DateTime?
+  status      String        @default("ACTIVE")
+  photo       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model Employee {
@@ -68,6 +70,7 @@ model BusinessUnit {
   products  Product[]        @relation("BusinessUnit_Product")
   histories HistoryProduct[] @relation("BusinessUnit_HistoryProduct")
   employees Employee[]       @relation("BusinessUnit_Employee")
+  users     User[]           @relation("User_Business")
   category  Category[]       @relation("Category_BusinessUnit")
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
@@ -75,7 +78,7 @@ model BusinessUnit {
 
 model Category {
   uid             String       @id @unique
-  name            String       @unique
+  name            String
   products        Product[]    @relation("Category_Product")
   business        BusinessUnit @relation("Category_BusinessUnit", fields: [businessUnitUid], references: [uid])
   businessUnitUid String
@@ -85,7 +88,7 @@ model Category {
 
 model Product {
   uid             String           @id @unique
-  name            String           @unique
+  name            String           
   quantity        Int
   description     String?
   priceBuy        Float
