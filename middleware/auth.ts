@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
 
 dotenv.config();
 
@@ -12,8 +13,9 @@ declare global {
     }
   }
 }
+const prisma = new PrismaClient();
 
-export const auth = (req: Request, res: Response, next: NextFunction) => {
+export const auth = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
@@ -27,12 +29,23 @@ export const auth = (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const decoded = jwt.verify(token, secretKey, { algorithms: ["HS256"] });
-    req.user = decoded as jwt.JwtPayload;
-    next();
+    if (typeof decoded === "object" && "user" in decoded) {
+      const user = await prisma.user.findUnique({
+        where: { uid: decoded?.user?.uid },
+      });
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      } else if (user.status === "INACTIVE") {
+        return res.status(401).json({ message: "User is inactive" });
+      } else {
+        req.user = decoded as jwt.JwtPayload;
+        next();
+      }
+    }
   } catch (e) {
     if (e instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ message: "Token expired" });
     }
-    res.status(400).json({ message: "Invalid token" });
+    res.status(401).json({ message: "Invalid token" });
   }
 };
