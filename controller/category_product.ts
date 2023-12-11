@@ -20,18 +20,22 @@ export const getCategoryProductDetail = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "Success get data", data: categoryProduct });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 export const getAllCategoryProducts = async (req: Request, res: Response) => {
   try {
-    const categoryProducts = await prisma.category.findMany();
+    const categoryProducts = await prisma.category.findMany({
+      where: { businessUnitUid: req?.user?.business },
+    });
 
     res
       .status(200)
       .json({ message: "Success get data", data: categoryProducts });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -51,6 +55,7 @@ export const getAllCategoryProductsByBusinessUnit = async (
       .status(200)
       .json({ message: "Success get data", data: categoryProducts });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -78,6 +83,7 @@ export const createCategoryProduct = async (req: Request, res: Response) => {
       data: categoryProduct,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -103,6 +109,7 @@ export const updateCategoryProduct = async (req: Request, res: Response) => {
       data: categoryProduct,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -128,6 +135,7 @@ export const deleteCategoryProduct = async (req: Request, res: Response) => {
       data: categoryProduct,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
