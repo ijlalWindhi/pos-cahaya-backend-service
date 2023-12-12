@@ -5,6 +5,7 @@ import { auth } from "../middleware/auth";
 const router = express.Router();
 
 router.get("/", auth, productController.getAllProducts);
+router.get("/search", auth, productController.searchProducts);
 router.get("/:uid", auth, productController.getProductDetail);
 router.get(
   "/getByBusinessUnit/:uid",
