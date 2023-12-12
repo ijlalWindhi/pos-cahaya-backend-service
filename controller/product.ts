@@ -54,6 +54,25 @@ export const getAllProductsByBusinessUnit = async (
   }
 };
 
+export const searchProducts = async (req: Request, res: Response) => {
+  const name = req.query.name;
+
+  try {
+    const products = await prisma.product.findMany({
+      where: { name: { contains: String(name) } },
+    });
+
+    if (products.length === 0) {
+      res.status(204).send();
+    } else {
+      res.status(200).json({ message: "Success get data", data: products });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const createProduct = async (req: Request, res: Response) => {
   const {
     name,
