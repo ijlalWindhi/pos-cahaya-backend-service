@@ -117,7 +117,7 @@ export const createProduct = async (req: Request, res: Response) => {
     });
 
     if (existingProduct) {
-      return res.status(400).json({ message: "Code already exists" });
+      return res.status(400).json({ message: "Code is already exists" });
     }
 
     const product = await prisma.product.create({
